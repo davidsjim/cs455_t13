@@ -9,10 +9,12 @@ if __name__ == '__main__':
     addons = data.flatMap(lambda char: char['character']['addons']).map(lambda addon: (addon, 1)).reduceByKey(lambda x, y: x + y)
     addonsFiltered = addons.filter(lambda addon: addon[1] > 100)
 
-    allowedAddons = set(addonsFiltered.collect())
+    allowedAddons = set(addonsFiltered.map(lambda t: t[0]).collect())
+    chars = data.filter(lambda char: set(char['character']['addons']).issubset(allowedAddons)).persist()
+    charsByLevel = chars.map(lambda char: (char['character']['level'], 1)).reduceByKey(lambda x, y: x + y).collect()
 
-    chars = data.filter(lambda char: set(char['character']['addons']).issubset(allowedAddons))
-    charsByLevel = chars.map(lambda char: (char['character']['level'], char)).mapValues(lambda x: 1).reduceByKey(lambda x, y: x + y).collect()
+    charsByClass = chars.map(lambda char: (char['character']['class'], 1)).reduceByKey(lambda x, y: x + y).filter(lambda char: char[1] > 300 and char[0] != "Tutorial Adventurer").collect()
+
     print(chars.count())
 
     for char in sorted(chars.collect()):

@@ -3,6 +3,7 @@ import json
 
 if __name__ == '__main__':
     sc = SparkContext()
+
     rawData = sc.textFile("/cs455/project/data/chars")
     data = rawData.filter(lambda line: len(line) > 1).map(lambda line: json.loads(line)).filter(
         lambda char: 'character' in char).filter(lambda char: char['character']['campaign'] == "Maj'Eyal")
@@ -11,3 +12,7 @@ if __name__ == '__main__':
     result = winsByLevel.collect()
     print(data.count())
     print(sorted(result))
+
+
+
+
