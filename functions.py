@@ -41,6 +41,10 @@ def splitByRace(rdd):
     ).filter(lambda c : len(c[1]) > 300 and c[0] != 'Tutorial Basic')
     return races
 
+def columnizeTalentTree(tree):
+    return [int(t['val'].split('/')[0]) for t in tree['list']]
+
+
 
 if __name__ == '__main__':
     sc = SparkContext()
