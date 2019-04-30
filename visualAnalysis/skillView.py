@@ -1,9 +1,8 @@
 from pyspark import SparkContext
 import json
 import matplotlib.pyplot as plt
-import numpy as np
 import sys
-import functions as fs
+import re
 
 blacklist = {'no_more_rares', 'bonusat10', 'cap-boost', 'expcontroller', 'starting-prodigy', 'Generous Levels',
              'MoreGenLev', 'adventbuff'}
@@ -25,11 +24,20 @@ if __name__ == '__main__':
         'class'] == archatype).cache()
     data.unpersist()
 
-    talents = chars.map(lambda char: char['talents']).collect()
+    talents = chars.flatMap(lambda char: [char['talents'][talent] for talent in char['talents']])
+
+    lists = talents.flatMap(lambda talent: talent['list']).map(
+        lambda talent: (talent['name'], int(talent['val'].split("/")[0]))).reduceByKey(
+        lambda x, y: x + y).collect()
+
+    num = chars.count()
+    for talent in sorted(lists, key=lambda x: x[1]):
+        if re.match('[A-Za-z]', talent[0]):
+            print(talent[0], talent[1], float(talent[1])/float(num))
 
 
-
-    for t in talents:
-
-
+    plt.plot([x[1] for x in sorted(lists, key=lambda x: x[1], reverse=True)[:30]], 'o')
+    plt.xticks([x for x in range(30)],[x[0] for x in sorted(lists, key=lambda x: x[1], reverse=True)[:30]], rotation = 30)
+    plt.title("Top 40 "+archatype+" skills")
+    plt.show()
 
