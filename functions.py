@@ -5,7 +5,6 @@ def filterByAddons(rdd):
     addons = rdd.flatMap(lambda char: char['character']['addons']).map(lambda addon: (addon, 1)).reduceByKey(
         lambda x, y: x + y)
     addonsFiltered = addons.filter(lambda addon: addon[1] > 100)
-
     allowedAddons = set(addonsFiltered.map(lambda t: t[0]).collect())
     chars = rdd.filter(lambda char: set(char['character']['addons']).issubset(allowedAddons))
     return chars
@@ -14,7 +13,6 @@ def filterByClass(rdd):
     classes = rdd.flatMap(lambda char: char['character']['class']).map(lambda addon: (addon, 1)).reduceByKey(
         lambda x, y: x + y)
     classesFiltered = classes.filter(lambda c: c[1] > 300 and c[0] != 'Tutorial Adventurer')
-
     allowedClasses = set(classesFiltered.map(lambda t: t[0]).collect())
     chars = rdd.filter(lambda char: set(char['character']['class']).issubset(allowedClasses))
     return chars
