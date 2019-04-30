@@ -1,9 +1,12 @@
 from pyspark import SparkContext
 import json
 import functions
+import numpy as np
 
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
+from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
+
 
 def columnizeTalentTree(tree):
     return [int(t['val'].split('/')[0]) for t in tree['list']]
@@ -20,6 +23,15 @@ def archerToColumn(char):
         column+=columnizeTalentTree(char['talents'][tree]) if tree in char['talents'] else ([0,0,0,0] if tree != "Technique / Combat training" else [0,0,0,0,0,0])
     return column
 
+def normalize(rows):
+    desired_max, desired_min=1,-1
+    X=np.array(rows)
+    numerator = (X - X.min(axis=0))
+    numerator*= (desired_max - desired_min)
+    denom = X.max(axis=0) - X.min(axis=0)
+    denom[denom == 0] = 1
+    return (desired_min + numerator / denom).tolist()
+
 if __name__ == '__main__':
     sc = SparkContext()
 
@@ -31,21 +43,18 @@ if __name__ == '__main__':
     archerList=archers.collect()
 
     levelIndex=2
-    levels={row[levelIndex] for row in archerList}
-    levelSums={level: ([0]*len(archerList[0], 0)) for level in levels}
-    for sum in levelSums:
-        sum.append([0]*len(archerList[0]))
+    levelSets=[[i] for i in range(1,16)]+[[i for i in range(5*j+16, 5*j+21)] for j in range(7)]
 
-    for row in archerList:
-        level = row[levelIndex]
-        for i in range(len(row)):
-            if i == levelIndex:
-                levelSums[level][i]+=1
-                continue
-            if level > 50:
-                continue
-            levelSums[level][0][i] += row[i]
-            levelSums[level][1]=levelSums[level][1]+1
+    normedRows=[]
+    for levelSet in levelSets:
+        levelRows=[row for row in archerList if row[levelIndex] in levelSet and len(row) == 61]
+        normedRows+=normalize(levelRows)
+
+    normalArchers = sc.parallelize(normedRows)
+
+    model = BisectingKMeans.train(normalArchers, 10, maxIterations=5)
+    model.predict(normalArchers)
+
 
 
 
