@@ -2,26 +2,130 @@ from pyspark import SparkContext
 import json
 import functions
 import numpy as np
+import classColumns
+
 
 from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
 
+def talentValParser(talentValString):
+    return int(talentValString.split('/')[0])
 
-def columnizeTalentTree(tree):
-    return [int(t['val'].split('/')[0]) for t in tree['list']]
+archerColumns=[
+    {'nodes': ['character', 'died', 'times']},
+    {'nodes': ['resources', 'life'], 'parse': lambda s: int(s.split('/')[1])},
+    {'nodes': ['character', 'level']},
+    {'nodes': ['resources', 'stamina'], 'parse': lambda s: int(s.split('/')[1])},
+    {'nodes': ['offense', 'mainhand', '0', 'crit'], 'parse': lambda s: int(s.split('/')[1])},
+
+    {'nodes': ['primary stats', 'strength', 'value']},
+    {'nodes': ['primary stats', 'magic', 'value']},
+    {'nodes': ['primary stats', 'dexterity', 'value']},
+    {'nodes': ['primary stats', 'willpower', 'value']},
+    {'nodes': ['primary stats', 'cunning', 'value']},
+    {'nodes': ['primary stats', 'constitution', 'value']},
+
+    {'nodes': ['defense', 'resistances', 'all'], 'parse': lambda s: int(s.split('%')[0][1:])},
+    {'nodes': ['defense', 'resistances', 'fire'], 'parse': lambda s: int(s.split('%')[0][1:])},
+    {'nodes': ['defense', 'resistances', 'physical'], 'parse': lambda s: int(s.split('%')[0][1:])},
+
+    {'nodes': ['defense', 'immunities', 'Stun Resistance'], 'parse': lambda s: int(s[:-1])},
+    {'nodes': ['defense', 'immunities', 'Bleed Resistance'], 'parse': lambda s: int(s[:-1])},
+    {'nodes': ['defense', 'immunities', 'Confusion Resistance'], 'parse': lambda s: int(s[:-1])},
+    {'nodes': ['defense', 'immunities', 'Fear Resistance'], 'parse': lambda s: int(s[:-1])},
+    {'nodes': ['defense', 'immunities', 'Poison Resistance'], 'parse': lambda s: int(s[:-1])},
+    {'nodes': ['defense', 'immunities', 'Instadeath Resistance'], 'parse': lambda s: int(s[:-1])},
+    {'nodes': ['defense', 'immunities', 'Blind Resistance'], 'parse': lambda s: int(s[:-1])},
+
+    {'nodes': ['defense', 'defense', 'armour']},
+    {'nodes': ['defense', 'defense', 'armour_hardiness']},
 
 
-archerTrees=['Technique / Archery training', "Technique / Archery prowess", "Technique / Combat techniques",
-                 "Technique / Combat veteran", "Technique / Marksmanship", "Technique / Reflexes",
-                 "Technique / Munitions", "Technique / Agility", "Technique / Sniper", "Cunning / Trapping",
-                 "Technique / Combat training", "Technique / Mobility", "Cunning / Survival", "Technique / Conditioning"]
+    {'nodes': ['speeds', 'mental']},
+    {'nodes': ['speeds', 'attack']},
+    {'nodes': ['speeds', 'spell']},
+    {'nodes': ['speeds', 'global']},
+    {'nodes': ['speeds', 'movement']},
 
-def archerToColumn(char):
+
+    {'nodes': ['talents', "Technique / Archery prowess", 'list', 0, 'val'], 'label': 'Headshot', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Archery prowess", 'list', 1, 'val'], 'label': 'Volley', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Archery prowess", 'list', 2, 'val'], 'label': 'Called Shots', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Archery prowess", 'list', 3, 'val'], 'label': 'Bulleyes', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Combat techniques", 'list', 0, 'val'], 'label': 'Rush', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat techniques", 'list', 1, 'val'], 'label': 'Precise Strikes', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat techniques", 'list', 2, 'val'], 'label': 'Perfect Strike', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat techniques", 'list', 3, 'val'], 'label': 'Blinding Speed', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Combat veteran", 'list', 0, 'val'], 'label': 'Quick Recovery', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat veteran", 'list', 1, 'val'], 'label': 'Fast Metabolism', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat veteran", 'list', 2, 'val'], 'label': 'Spell Shield', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat veteran", 'list', 3, 'val'], 'label': 'Unending Frenzy', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Marksmanship", 'list', 0, 'val'], 'label': 'Master Marksman', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Marksmanship", 'list', 1, 'val'], 'label': 'First Blood', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Marksmanship", 'list', 2, 'val'], 'label': 'Flare', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Marksmanship", 'list', 3, 'val'], 'label': 'Trueshot', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Reflexes", 'list', 0, 'val'], 'label': 'Shoot Down', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Reflexes", 'list', 1, 'val'], 'label': 'Intuitive Shots', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Reflexes", 'list', 2, 'val'], 'label': 'Sentinel', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Reflexes", 'list', 3, 'val'], 'label': 'Escape', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Munitions", 'list', 0, 'val'], 'label': 'Exotic Munitions', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Munitions", 'list', 1, 'val'], 'label': 'Explosive Shot', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Munitions", 'list', 2, 'val'], 'label': 'Enhanced Munitions', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Munitions", 'list', 3, 'val'], 'label': 'Alloyed Munitions', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Agility", 'list', 0, 'val'], 'label': 'Agile Defense', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Agility", 'list', 1, 'val'], 'label': 'Vault', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Agility", 'list', 2, 'val'], 'label': 'Bull Shot', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Agility", 'list', 3, 'val'], 'label': 'Rapid Shot', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Sniper", 'list', 0, 'val'], 'label': 'Concealment', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Sniper", 'list', 1, 'val'], 'label': 'Shadow Shot', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Sniper", 'list', 2, 'val'], 'label': 'Aim', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Sniper", 'list', 3, 'val'], 'label': 'Snipe', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Cunning / Trapping", 'list', 0, 'val'], 'label': 'Trap Mastery', 'parse': talentValParser},
+    {'nodes': ['talents', "Cunning / Trapping", 'list', 1, 'val'], 'label': 'Lure', 'parse': talentValParser},
+    {'nodes': ['talents', "Cunning / Trapping", 'list', 2, 'val'], 'label': 'Advanced Trap Deployment', 'parse': talentValParser},
+    {'nodes': ['talents', "Cunning / Trapping", 'list', 3, 'val'], 'label': 'Trap Priming', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Combat training", 'list', 0, 'val'], 'label': 'Thick Skin', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat training", 'list', 1, 'val'], 'label': 'Armour Training', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat training", 'list', 2, 'val'], 'label': 'Light Armour Training', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat training", 'list', 3, 'val'], 'label': 'Combat Accuracy', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat training", 'list', 4, 'val'], 'label': 'Weapons Mastery', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Combat training", 'list', 5, 'val'], 'label': 'Dagger Mastery', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Mobility", 'list', 0, 'val'], 'label': 'Disengage', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Mobility", 'list', 1, 'val'], 'label': 'Evasion', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Mobility", 'list', 2, 'val'], 'label': 'Tumble', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Mobility", 'list', 3, 'val'], 'label': 'Trained Reactions', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Cunning / Survival", 'list', 0, 'val'], 'label': 'Heightened Senses', 'parse': talentValParser},
+    {'nodes': ['talents', "Cunning / Survival", 'list', 1, 'val'], 'label': 'Device Mastery', 'parse': talentValParser},
+    {'nodes': ['talents', "Cunning / Survival", 'list', 2, 'val'], 'label': 'Track', 'parse': talentValParser},
+    {'nodes': ['talents', "Cunning / Survival", 'list', 3, 'val'], 'label': 'Danger Sense', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Technique / Conditioning", 'list', 0, 'val'], 'label': 'Vitality', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Conditioning", 'list', 1, 'val'], 'label': 'Unflinching Resolve', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Conditioning", 'list', 2, 'val'], 'label': 'Daunting Presence', 'parse': talentValParser},
+    {'nodes': ['talents', "Technique / Conditioning", 'list', 3, 'val'], 'label': 'Adrenaline Surge', 'parse': talentValParser},
+]
+
+
+def charToColumn(char, columnDefs):
     column=[]
-    for element in archerColumns:
+    for element in columnDefs:
         subtree=char
         nodeIndex=0
-        while element['nodes'][nodeIndex] in subtree and nodeIndex < len(element['nodes']):
-            subtree=element['nodes'][nodeIndex]
+        while nodeIndex < len(element['nodes']) :
+            try:
+                subtree=subtree[element['nodes'][nodeIndex]]
+            except:
+                break
             nodeIndex+=1
         value=None
         if nodeIndex >= len(element['nodes']):
@@ -39,6 +143,7 @@ def columnToArcher(col):
         label=column['label'] if 'label' in column else column['nodes'][-1]
         val=col[i]
         char[label]=val
+    return char
 
 def normalize(rows):
     desired_max, desired_min=1,-1
@@ -80,6 +185,7 @@ if __name__ == '__main__':
     data=functions.filterByAddons(data)
     data=functions.filterByClass(data).persist()
 
+    archerToColumn=lambda char: charToColumn(char, archerColumns)
     archers=data.filter(lambda char: char['character']['class'] == 'Archer').map(archerToColumn)
     archerList=archers.collect()
 
