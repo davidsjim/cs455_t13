@@ -17,12 +17,12 @@ archerColumns=[
     {'nodes': ['resources', 'stamina'], 'parse': lambda s: int(s.split('/')[1])},
     {'nodes': ['offense', 'mainhand', '0', 'crit'], 'parse': lambda s: int(s.split('/')[1])},
 
-    {'nodes': ['primary stats', 'strength', 'value']},
-    {'nodes': ['primary stats', 'magic', 'value']},
-    {'nodes': ['primary stats', 'dexterity', 'value']},
-    {'nodes': ['primary stats', 'willpower', 'value']},
-    {'nodes': ['primary stats', 'cunning', 'value']},
-    {'nodes': ['primary stats', 'constitution', 'value']},
+    {'nodes': ['primary stats', 'strength', 'value'], 'label': 'strength'},
+    {'nodes': ['primary stats', 'magic', 'value'], 'label': 'magic'},
+    {'nodes': ['primary stats', 'dexterity', 'value'], 'label': 'dexterity'},
+    {'nodes': ['primary stats', 'willpower', 'value'], 'label': 'willpower'},
+    {'nodes': ['primary stats', 'cunning', 'value'], 'label': 'cunning'},
+    {'nodes': ['primary stats', 'constitution', 'value'], 'label': 'constitution'},
 
     {'nodes': ['defense', 'resistances', 'all'], 'parse': lambda s: int(s.split('%')[0][1:])},
     {'nodes': ['defense', 'resistances', 'fire'], 'parse': lambda s: int(s.split('%')[0][1:])},
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     normedLevelSets={}
     denormalizers={}
     for levelSet in levelSets:
-        levelRows=[row for row in archerList if row[levelIndex] in levelSet and len(row) == 61]
+        levelRows=[row for row in archerList if row[levelIndex] in levelSet]
         normalized=normalize(levelRows)
         normedRows+=normalized
         for i in range(len(normalized)):
@@ -212,6 +212,8 @@ if __name__ == '__main__':
     print("row:", randomRow)
     print("denormed:", denormalizers[tuple(randomRow)] )
     print("cluster:", model.predict(randomRow))
+
+    print("labeled cluster:", columnToArcher(model.centers[model.predict(randomRow)]))
 
 
 
