@@ -10,18 +10,35 @@ def columnizeTalentTree(tree):
     return [int(t['val'].split('/')[0]) for t in tree['list']]
 
 
-def archerToColumn(char):
-    column=[]
-    column.append(char['character']['died']['times'] if 'died' in char['character'] else 0)
-    column.append(int(char['resources']['life'].split('/')[1]))
-    column.append(char['character']['level'])
-    for tree in ['Technique / Archery training', "Technique / Archery prowess", "Technique / Combat techniques",
+archerTrees=['Technique / Archery training', "Technique / Archery prowess", "Technique / Combat techniques",
                  "Technique / Combat veteran", "Technique / Marksmanship", "Technique / Reflexes",
                  "Technique / Munitions", "Technique / Agility", "Technique / Sniper", "Cunning / Trapping",
-                 "Technique / Combat training", "Technique / Mobility", "Cunning / Survival", "Technique / Conditioning"]:
-        column+=columnizeTalentTree(char['talents'][tree]) if tree in char['talents'] else ([0,0,0,0] if tree != "Technique / Combat training" else [0,0,0,0,0,0])
+                 "Technique / Combat training", "Technique / Mobility", "Cunning / Survival", "Technique / Conditioning"]
+
+def archerToColumn(char):
+    column=[]
+    for element in archerColumns:
+        subtree=char
+        nodeIndex=0
+        while element['nodes'][nodeIndex] in subtree and nodeIndex < len(element['nodes']):
+            subtree=element['nodes'][nodeIndex]
+            nodeIndex+=1
+        value=None
+        if nodeIndex >= len(element['nodes']):
+            parsefn=element['parse'] if 'parse' in element else lambda x: x
+            value=parsefn(subtree)
+        else:
+            value=0
+        column.append(value)
     return column
 
+def columnToArcher(col):
+    char={}
+    for i in range(len(archerColumns)):
+        column=archerColumns[i]
+        label=column['label'] if 'label' in column else column['nodes'][-1]
+        val=col[i]
+        char[label]=val
 
 def normalize(rows):
     desired_max, desired_min=1,-1
@@ -80,9 +97,10 @@ if __name__ == '__main__':
             row=normalized[i]
             denormalizers[tuple(row)]=levelRows[i]
 
-        normalArchers = sc.parallelize(normedRows)
 
-        model = BisectingKMeans.train(normalArchers, 10, maxIterations=10)
+    normalArchers = sc.parallelize(normedRows).persist()
+
+    model = BisectingKMeans.train(normalArchers, 10, maxIterations=10)
 
     randomRow=normedRows[0]
     print("row:", randomRow)
