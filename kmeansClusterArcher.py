@@ -242,5 +242,7 @@ if __name__ == '__main__':
     for members in clusterMembers:
         members.sort(key=lambda char: char['Level'])
 
-     for i in range(len(clusterMembers)):
-            print("cluster id:",i, ". Cluster size: ", len(clusterMembers[i]), ". Avg. Deaths:", columnToArcher(model.centers[i])['Number of Deaths'])
+    for i in range(len(clusterMembers)):
+        print("cluster id:",i, ". Cluster size: ", len(clusterMembers[i]), ". Avg. Deaths:", columnToArcher(model.centers[i])['Number of Deaths'])
+
+        
