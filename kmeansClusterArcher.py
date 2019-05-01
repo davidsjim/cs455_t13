@@ -217,12 +217,12 @@ if __name__ == '__main__':
     # print("cluster:", model.predict(randomRow))
 
 
-    print("labeled cluster:", columnToArcher(model.centers[model.predict(randomRow)]))
-    print("\n\n")
+    #print("labeled cluster:", columnToArcher(model.centers[model.predict(randomRow)]))
+    #print("\n\n")
 
-    # print("TYPE:", type(columnToArcher(model.centers[model.predict(randomRow)])))
+
     labeledCluster = columnToArcher(model.centers[model.predict(randomRow)])
-    for key, value in labeledCluster.values():
+    for key, value in sorted(labeledCluster.items(), key=lambda s: s[1]):
          print(key, value)
 
 
