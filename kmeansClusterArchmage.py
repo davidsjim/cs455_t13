@@ -47,7 +47,7 @@ archmageColumns=[
     {'nodes': ['speeds', 'attack'], 'label': 'Speed: Attack'},
     {'nodes': ['speeds', 'spell'], 'label': 'Speed: Spell'},
     {'nodes': ['speeds', 'global'], 'label': 'Speed: Global'},
-    {'nodes': ['speeds', 'movement'], 'label': 'Speed: Movement'},
+    #{'nodes': ['speeds', 'movement'], 'label': 'Speed: Movement'},
 
 
     {'nodes': ['talents', "Spell / Arcane", 'list', 0, 'val'], 'label': 'Talent: Arcane Power', 'parse': talentValParser},
@@ -239,3 +239,4 @@ if __name__ == '__main__':
         clusterMembers[clusterIndex].append(columnToArchmage(denormalizers[tuple(row)]))
     for members in clusterMembers:
         members.sort(key=lambda char: char['Level'])
+
