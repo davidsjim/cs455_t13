@@ -2,7 +2,6 @@ from pyspark import SparkContext
 import json
 import functions
 import numpy as np
-import classColumns
 
 
 from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
@@ -10,7 +9,7 @@ from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
 def talentValParser(talentValString):
     return int(talentValString.split('/')[0])
 
-archerColumns=[
+archmageColumns=[
     {'nodes': ['character', 'died', 'times'], 'label': 'Number of Deaths'},
     {'nodes': ['resources', 'life'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Life'},
     {'nodes': ['character', 'level'], 'label': 'Level'},
@@ -139,8 +138,8 @@ def charToColumn(char, columnDefs):
 
 def columnToArchmage(col):
     char={}
-    for i in range(len(archerColumns)):
-        column=archerColumns[i]
+    for i in range(len(archmageColumns)):
+        column=archmageColumns[i]
         label=column['label'] if 'label' in column else column['nodes'][-1]
         val=col[i]
         char[label]=val
@@ -186,9 +185,9 @@ if __name__ == '__main__':
     data=functions.filterByAddons(data)
     data=functions.filterByClass(data).persist()
 
-    archerToColumn=lambda char: charToColumn(char, archerColumns)
-    archers=data.filter(lambda char: char['character']['class'] == 'Archer').map(archerToColumn)
-    archerList=archers.collect()
+    archmageToColumn=lambda char: charToColumn(char, archmageColumns)
+    archmages=data.filter(lambda char: char['character']['class'] == 'Archmage').map(archmageToColumn)
+    archmageList=archmages.collect()
 
     levelIndex=2
     levelSets=[tuple([i]) for i in range(1,16)]+[tuple(i for i in range(5*j+16, 5*j+21)) for j in range(7)]
@@ -197,7 +196,7 @@ if __name__ == '__main__':
     normedLevelSets={}
     denormalizers={}
     for levelSet in levelSets:
-        levelRows=[row for row in archerList if row[levelIndex] in levelSet]
+        levelRows=[row for row in archmageList if row[levelIndex] in levelSet]
         normalized=normalize(levelRows)
         normedRows+=normalized
         for i in range(len(normalized)):
@@ -217,6 +216,8 @@ if __name__ == '__main__':
     print("labeled cluster:", columnToArchmage(model.centers[model.predict(randomRow)]))
 
 
-
+    labeledCluster = columnToArchmage(model.centers[model.predict(randomRow)])
+    for key, value in sorted(labeledCluster.items()):
+         print(key, value)
 
 
