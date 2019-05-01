@@ -47,7 +47,7 @@ archmageColumns=[
     {'nodes': ['speeds', 'attack'], 'label': 'Speed: Attack'},
     {'nodes': ['speeds', 'spell'], 'label': 'Speed: Spell'},
     {'nodes': ['speeds', 'global'], 'label': 'Speed: Global'},
-    {'nodes': ['speeds', 'movement'], 'label': 'Speed: Movement'},
+    #{'nodes': ['speeds', 'movement'], 'label': 'Speed: Movement'},
 
 
     {'nodes': ['talents', "Spell / Arcane", 'list', 0, 'val'], 'label': 'Talent: Arcane Power', 'parse': talentValParser},
@@ -114,6 +114,27 @@ archmageColumns=[
     {'nodes': ['talents', "Spell / Temporal", 'list', 1, 'val'], 'label': 'Talent: Time Shield', 'parse': talentValParser},
     {'nodes': ['talents', "Spell / Temporal", 'list', 2, 'val'], 'label': 'Talent: Time Prison', 'parse': talentValParser},
     {'nodes': ['talents', "Spell / Temporal", 'list', 3, 'val'], 'label': 'Talent: Essence of Speed', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Spell / Conveyance", 'list', 0, 'val'], 'label': 'Talent: Phase Door', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Conveyance", 'list', 1, 'val'], 'label': 'Talent: Teleport', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Conveyance", 'list', 2, 'val'], 'label': 'Talent: Displacement Shield', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Conveyance", 'list', 3, 'val'], 'label': 'Talent: Probability Travel', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Spell / Divination", 'list', 0, 'val'], 'label': 'Talent: Arcane Eye', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Divination", 'list', 1, 'val'], 'label': 'Talent: Keen Senses', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Divination", 'list', 2, 'val'], 'label': 'Talent: Vision', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Divination", 'list', 3, 'val'], 'label': 'Talent: Premonition', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Spell / Aegis", 'list', 0, 'val'], 'label': 'Talent: Arcane Reconstruction', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Aegis", 'list', 1, 'val'], 'label': 'Talent: Shielding', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Aegis", 'list', 2, 'val'], 'label': 'Talent: Arcane Shield', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Aegis", 'list', 3, 'val'], 'label': 'Talent: Aegis', 'parse': talentValParser},
+
+    {'nodes': ['talents', "Spell / Survival", 'list', 0, 'val'], 'label': 'Talent: Heightened Senses', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Survival", 'list', 1, 'val'], 'label': 'Talent: Device Mastery', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Survival", 'list', 2, 'val'], 'label': 'Talent: Track', 'parse': talentValParser},
+    {'nodes': ['talents', "Spell / Survival", 'list', 3, 'val'], 'label': 'Talent: Danger Sense', 'parse': talentValParser},
+
 ]
 
 
