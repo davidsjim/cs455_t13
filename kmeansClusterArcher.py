@@ -15,7 +15,7 @@ archerColumns=[
     {'nodes': ['resources', 'life'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Life'},
     {'nodes': ['character', 'level'], 'label': 'Level'},
     {'nodes': ['resources', 'stamina'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Stamina'},
-    {'nodes': ['offense', 'mainhand', '0', 'crit'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Crit Chance'},
+    {'nodes': ['offense', 'mainhand', 0, 'crit'], 'parse': lambda s: int(s[:-1]), 'label': 'Crit Chance'},
 
     {'nodes': ['primary stats', 'strength', 'value'], 'label': 'Primary Stat: strength'},
     {'nodes': ['primary stats', 'magic', 'value'], 'label': 'Primary Stat: magic'},
@@ -221,9 +221,12 @@ if __name__ == '__main__':
     #print("\n\n")
 
 
-    labeledCluster = columnToArcher(model.centers[model.predict(randomRow)])
-    for key, value in sorted(labeledCluster.items(), key=lambda s: s[1]):
-         print(key, value)
+    goodClusters=sorted(model.centers, key=lambda center: center[0])[:5]
+    for clusterRow in goodClusters:
+            cluster=columnToArcher(clusterRow)
+            print("DEATHS:", cluster['Number of Deaths'])
+            for key, value in sorted(cluster.items(), key=lambda s: abs(s[1]))[-10:]:
+                 print(key, value)
 
 
 
