@@ -25,23 +25,11 @@ if __name__ == '__main__':
     chars = data.filter(lambda char: set(char['character']['addons']).issubset(allowedAddons) and char['character']['class'] in allowedClasses).cache()
     data.unpersist()
 
-    usedClasses = chars.map(lambda char: ((char['character']['class'],  char['character']['level']), 1)).reduceByKey(lambda x,y:x+y).cache()
+    levels = chars.map(lambda char: (char['character']['level'], (char['character']['died']['times'], 1))).reduceByKey(lambda x, y: (x[0]+ y[0], x[1]+y[1])).collect()
 
-
-    for c in allowedClasses:
-        levels = usedClasses.filter(lambda char: char[0][0] == c).collect()
-        ys = [char[1] for char in levels]
-        xs = [char[0][1] for char in levels]
-        plt.plot(xs, ys, 'o', label=c)
-    plt.legend()
+    plt.plot([x[0] for x in levels], [(c[1][0], c[1][1]) for c in levels])
+    plt.legend(["Deaths", "Characters"])
+    plt.title("Character deaths by level")
+    plt.ylabel("Number of characters/Deaths")
+    plt.xlabel("Level")
     plt.show()
-
-    #print(usedClasses.take(1))
-    #print(len(usedClasses.take(1)[0][1][1]))
-
-
-
-    #classesByLevel = {c: c.map(lambda char: (char[1], 1)).reduceByLey(lambda x,y:x+y).collect() for c in usedClasses.collect()}
-
-    #print(classesByLevel)
-

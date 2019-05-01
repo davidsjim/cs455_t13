@@ -48,8 +48,3 @@ if __name__ == '__main__':
     ax1.set_ylabel("Average skill points")
     plt.xticks([x+1 for x in range(50)])
     plt.show()
-
-
-
-
-#'Master Marksman'
