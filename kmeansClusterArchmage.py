@@ -2,6 +2,7 @@ from pyspark import SparkContext
 import json
 import functions
 import numpy as np
+import sys
 
 
 from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
@@ -14,7 +15,7 @@ archmageColumns=[
     {'nodes': ['resources', 'life'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Life'},
     {'nodes': ['character', 'level'], 'label': 'Level'},
     {'nodes': ['resources', 'stamina'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Stamina'},
-    {'nodes': ['offense', 'mainhand', '0', 'crit'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Crit Chance'},
+    {'nodes': ['offense', 'spell', 'crit'], 'parse': lambda s: int(s[:-1]), 'label': 'Spell Crit Chance'},
 
     {'nodes': ['primary stats', 'strength', 'value'], 'label': 'Primary Stat: strength'},
     {'nodes': ['primary stats', 'magic', 'value'], 'label': 'Primary Stat: magic'},
@@ -28,12 +29,12 @@ archmageColumns=[
     {'nodes': ['defense', 'resistances', 'physical'], 'parse': lambda s: int(s.split('%')[0][1:]), 'label': 'Resistance: Physical'},
 
     {'nodes': ['defense', 'immunities', 'Stun Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Stun'},
-    {'nodes': ['defense', 'immunities', 'Bleed Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Bleed'},
+    #{'nodes': ['defense', 'immunities', 'Bleed Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Bleed'},
     {'nodes': ['defense', 'immunities', 'Confusion Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Confusion'},
     {'nodes': ['defense', 'immunities', 'Pinning Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Pinning'},
-    {'nodes': ['defense', 'immunities', 'Fear Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Fear'},
-    {'nodes': ['defense', 'immunities', 'Poison Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Poison'},
-    {'nodes': ['defense', 'immunities', 'Instadeath Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Instadeath'},
+    #{'nodes': ['defense', 'immunities', 'Fear Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Fear'},
+    #{'nodes': ['defense', 'immunities', 'Poison Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Poison'},
+    #{'nodes': ['defense', 'immunities', 'Instadeath Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Instadeath'},
     {'nodes': ['defense', 'immunities', 'Silence Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Silence'},
     {'nodes': ['defense', 'immunities', 'Blind Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Blind'},
     {'nodes': ['defense', 'immunities', 'Disease Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Disease'},
@@ -204,20 +205,29 @@ if __name__ == '__main__':
             denormalizers[tuple(row)]=levelRows[i]
 
 
-    normalArchers = sc.parallelize(normedRows).persist()
+    normalArchmage = sc.parallelize(normedRows).persist()
 
-    model = BisectingKMeans.train(normalArchers, 10, maxIterations=10)
+    numClusters= int(sys.argv[1])
+    numIterations= int(sys.argv[2])
+    model = BisectingKMeans.train(normalArchmage, numClusters, maxIterations=numIterations)
 
     randomRow=normedRows[0]
-    print("row:", randomRow)
-    print("denormed:", denormalizers[tuple(randomRow)] )
-    print("cluster:", model.predict(randomRow))
-
-    print("labeled cluster:", columnToArchmage(model.centers[model.predict(randomRow)]))
+    # print("row:", randomRow)
+    # print("denormed:", denormalizers[tuple(randomRow)] )
+    # print("cluster:", model.predict(randomRow))
 
 
-    labeledCluster = columnToArchmage(model.centers[model.predict(randomRow)])
-    for key, value in sorted(labeledCluster.items()):
-         print(key, value)
+    #print("labeled cluster:", columnToArcher(model.centers[model.predict(randomRow)]))
+    #print("\n\n")
 
 
+    goodClusters=sorted(model.centers, key=lambda center: center[0])
+    for clusterRow in goodClusters:
+            cluster=columnToArchmage(clusterRow)
+            print()
+            print()
+            print("DEATHS:", cluster['Number of Deaths'])
+            printCutoff=float(sys.argv[3])
+            for key, value in sorted(cluster.items(), key=lambda s: abs(s[1])):
+                if abs(value)>printCutoff:
+                    print(key, value)

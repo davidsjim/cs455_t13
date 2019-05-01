@@ -2,9 +2,11 @@ from pyspark import SparkContext
 import json
 import functions
 import numpy as np
-import sys
 
-
+from pyspark.ml import Pipeline
+from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.feature import IndexToString, StringIndexer, VectorIndexer
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
 
 def talentValParser(talentValString):
@@ -15,7 +17,7 @@ archerColumns=[
     {'nodes': ['resources', 'life'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Life'},
     {'nodes': ['character', 'level'], 'label': 'Level'},
     {'nodes': ['resources', 'stamina'], 'parse': lambda s: int(s.split('/')[1]), 'label': 'Stamina'},
-    {'nodes': ['offense', 'mainhand', 0, 'crit'], 'parse': lambda s: int(s[:-1]), 'label': 'Crit Chance'},
+    {'nodes': ['offense', 'mainhand', 0, 'crit'],  'parse': lambda s: int(s[:-1]), 'label': 'Crit Chance'},
 
     {'nodes': ['primary stats', 'strength', 'value'], 'label': 'Primary Stat: strength'},
     {'nodes': ['primary stats', 'magic', 'value'], 'label': 'Primary Stat: magic'},
@@ -29,12 +31,12 @@ archerColumns=[
     {'nodes': ['defense', 'resistances', 'physical'], 'parse': lambda s: int(s.split('%')[0][1:]), 'label': 'Resistance: Physical'},
 
     {'nodes': ['defense', 'immunities', 'Stun Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Stun'},
-    #{'nodes': ['defense', 'immunities', 'Bleed Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Bleed'},
+    {'nodes': ['defense', 'immunities', 'Bleed Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Bleed'},
     {'nodes': ['defense', 'immunities', 'Confusion Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Confusion'},
     {'nodes': ['defense', 'immunities', 'Pinning Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Pinning'},
-    #{'nodes': ['defense', 'immunities', 'Fear Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Fear'},
-    #{'nodes': ['defense', 'immunities', 'Poison Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Poison'},
-    #{'nodes': ['defense', 'immunities', 'Instadeath Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Instadeath'},
+    {'nodes': ['defense', 'immunities', 'Fear Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Fear'},
+    {'nodes': ['defense', 'immunities', 'Poison Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Poison'},
+    {'nodes': ['defense', 'immunities', 'Instadeath Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Instadeath'},
     {'nodes': ['defense', 'immunities', 'Silence Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Silence'},
     {'nodes': ['defense', 'immunities', 'Blind Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Blind'},
     {'nodes': ['defense', 'immunities', 'Disease Resistance'], 'parse': lambda s: int(s[:-1]), 'label': 'Immunity: Disease'},
@@ -207,32 +209,48 @@ if __name__ == '__main__':
             denormalizers[tuple(row)]=levelRows[i]
 
 
-    normalArchers = sc.parallelize(normedRows).persist()
-
-    numClusters= int(sys.argv[1])
-    numIterations= int(sys.argv[2])
-    model = BisectingKMeans.train(normalArchers, numClusters, maxIterations=numIterations)
-
-    randomRow=normedRows[0]
-    # print("row:", randomRow)
-    # print("denormed:", denormalizers[tuple(randomRow)] )
-    # print("cluster:", model.predict(randomRow))
+    normalArchers = sc.parallelize(normedRows)
+    normalArchers = normalArchers.df()
 
 
-    #print("labeled cluster:", columnToArcher(model.centers[model.predict(randomRow)]))
-    #print("\n\n")
 
+    labelIndexer = StringIndexer(inputCol="label", outputCol="indexedLabel").fit(normalArchers)
 
-    goodClusters=sorted(model.centers, key=lambda center: center[0])
-    for clusterRow in goodClusters:
-            cluster=columnToArcher(clusterRow)
-            print()
-            print()
-            print("DEATHS:", cluster['Number of Deaths'])
-            printCutoff=float(sys.argv[3])
-            for key, value in sorted(cluster.items(), key=lambda s: abs(s[1])):
-                if abs(value)>printCutoff:
-                    print(key, value)
+    # Automatically identify categorical features, and index them.
+    # Set maxCategories so features with > 4 distinct values are treated as continuous.
+    featureIndexer = \
+        VectorIndexer(inputCol="features", outputCol="indexedFeatures", maxCategories=4).fit(normalArchers)
+
+    # Split the data into training and test sets (30% held out for testing)
+    (trainingData, testData) = normalArchers.randomSplit([0.7, 0.3])
+
+    rf = RandomForestClassifier(labelCol="indexedLabel", featuresCol="indexedFeatures", numTrees=5)
+
+    # Convert indexed labels back to original labels.
+    labelConverter = IndexToString(inputCol="prediction", outputCol="predictedLabel",
+                                   labels=labelIndexer.labels)
+
+    # Chain indexers and forest in a Pipeline
+    pipeline = Pipeline(stages=[labelIndexer, featureIndexer, rf, labelConverter])
+
+    # Train model.  This also runs the indexers.
+    model = pipeline.fit(trainingData)
+
+    # Make predictions.
+    predictions = model.transform(testData)
+
+    # Select example rows to display.
+    predictions.select("predictedLabel", "label", "features").show(5)
+
+    # Select (prediction, true label) and compute test error
+    evaluator = MulticlassClassificationEvaluator(
+        labelCol="indexedLabel", predictionCol="prediction", metricName="accuracy")
+    accuracy = evaluator.evaluate(predictions)
+    print("Test Error = %g" % (1.0 - accuracy))
+
+    rfModel = model.stages[2]
+    print(rfModel)  # summary only
+
 
 
 
