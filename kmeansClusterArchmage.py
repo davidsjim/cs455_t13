@@ -229,7 +229,7 @@ if __name__ == '__main__':
             print("DEATHS:", cluster['Number of Deaths'])
             printCutoff=float(sys.argv[3])
             for key, value in sorted(cluster.items(), key=lambda s: abs(s[1])):
-                if abs(value)>printCutoff:
+                if value>printCutoff:
                     print(key, value)
 
 
@@ -240,3 +240,8 @@ if __name__ == '__main__':
     for members in clusterMembers:
         members.sort(key=lambda char: char['Level'])
 
+<<<<<<< HEAD
+=======
+    for i in range(len(clusterMembers)):
+        print("cluster id:",i, ". Cluster size: ", len(clusterMembers[i]), ". Avg. Deaths:", columnToArchmage(model.centers[i])['Number of Deaths'])
+>>>>>>> 0c9c3a4458d846fa17671f13122b5cda91ed17a6
