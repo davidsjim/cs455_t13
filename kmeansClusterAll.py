@@ -3,13 +3,12 @@ import json
 import functions
 import numpy as np
 
-from pyspark.ml.clustering import KMeans
-from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
 
 
 def columnizeTalentTree(tree):
     return [int(t['val'].split('/')[0]) for t in tree['list']]
+
 
 def archerToColumn(char):
     column=[]
@@ -23,6 +22,7 @@ def archerToColumn(char):
         column+=columnizeTalentTree(char['talents'][tree]) if tree in char['talents'] else ([0,0,0,0] if tree != "Technique / Combat training" else [0,0,0,0,0,0])
     return column
 
+
 def normalize(rows):
     desired_max, desired_min=1,-1
     X=np.array(rows)
@@ -30,7 +30,31 @@ def normalize(rows):
     numerator*= (desired_max - desired_min)
     denom = X.max(axis=0) - X.min(axis=0)
     denom[denom == 0] = 1
-    return (desired_min + numerator / denom).tolist()
+    total= (desired_min + numerator / denom).astype(np.float64)
+    total-=total.mean(axis=0)
+    return total.tolist()
+
+
+def computeDenormalizer(rows):
+    desired_max, desired_min = 1, -1
+    X = np.array(rows)
+    mins=X.min(axis=0)
+    numerator = (X - mins)
+    numerator *= (desired_max - desired_min)
+    denom = X.max(axis=0) - X.min(axis=0)
+    denom[denom == 0] = 1
+    total = (desired_min + numerator / denom).astype(np.float64)
+    mean=total.mean(axis=0)
+    def denormalizer(row):
+        row=np.array(row)
+        row+=mean
+        row -= desired_min
+        row *= denom
+        row +=mins
+        return row.tolist()
+
+    return denormalizer
+
 
 if __name__ == '__main__':
     sc = SparkContext()
@@ -43,17 +67,28 @@ if __name__ == '__main__':
     archerList=archers.collect()
 
     levelIndex=2
-    levelSets=[[i] for i in range(1,16)]+[[i for i in range(5*j+16, 5*j+21)] for j in range(7)]
+    levelSets=[tuple([i]) for i in range(1,16)]+[tuple(i for i in range(5*j+16, 5*j+21)) for j in range(7)]
 
     normedRows=[]
+    normedLevelSets={}
+    denormalizers={}
     for levelSet in levelSets:
         levelRows=[row for row in archerList if row[levelIndex] in levelSet and len(row) == 61]
-        normedRows+=normalize(levelRows)
+        normalized=normalize(levelRows)
+        normedRows+=normalized
+        for i in range(len(normalized)):
+            row=normalized[i]
+            denormalizers[tuple(row)]=levelRows[i]
 
-    normalArchers = sc.parallelize(normedRows)
+        normalArchers = sc.parallelize(normedRows)
 
-    model = BisectingKMeans.train(normalArchers, 10, maxIterations=5)
-    model.predict(normalArchers)
+        model = BisectingKMeans.train(normalArchers, 10, maxIterations=10)
+
+    randomRow=normedRows[0]
+    print("row:", randomRow)
+    print("denormed:", denormalizers[tuple(randomRow)] )
+    print("cluster:", model.predict(randomRow))
+
 
 
 
