@@ -5,7 +5,7 @@ import numpy as np
 import sys
 
 
-from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
+from pyspark.mllib.clustering import KMeans, KMeansModel
 
 def talentValParser(talentValString):
     return int(talentValString.split('/')[0])
@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
     numClusters= int(sys.argv[1])
     numIterations= int(sys.argv[2])
-    model = BisectingKMeans.train(normalArchers, numClusters, maxIterations=numIterations)
+    model = KMeans.train(normalArchers, numClusters, maxIterations=numIterations)
 
     randomRow=normedRows[0]
     # print("row:", randomRow)
@@ -233,6 +233,8 @@ if __name__ == '__main__':
             for key, value in sorted(cluster.items(), key=lambda s: abs(s[1])):
                 if abs(value)>printCutoff:
                     print(key, value)
+
+
     clusterMembers = [[] for center in model.centers]
     for row in normedRows:
         clusterIndex=model.predict(row)
@@ -240,3 +242,5 @@ if __name__ == '__main__':
     for members in clusterMembers:
         members.sort(key=lambda char: char['Level'])
 
+     for i in range(len(clusterMembers)):
+            print("cluster id:",i, ". Cluster size: ", len(clusterMembers[i]), ". Avg. Deaths:", columnToArcher(model.centers[i])['Number of Deaths'])
