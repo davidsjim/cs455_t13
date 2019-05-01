@@ -231,3 +231,11 @@ if __name__ == '__main__':
             for key, value in sorted(cluster.items(), key=lambda s: abs(s[1])):
                 if abs(value)>printCutoff:
                     print(key, value)
+
+
+    clusterMembers = [[] for center in model.centers]
+    for row in normedRows:
+        clusterIndex=model.predict(row)
+        clusterMembers[clusterIndex].append(columnToArcher(denormalizers[tuple(row)]))
+    for members in clusterMembers:
+        members.sort(key=lambda char: char['Level'])
