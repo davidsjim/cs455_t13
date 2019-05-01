@@ -37,7 +37,7 @@ if __name__ == '__main__':
     for c in archetypes:
         aChars = usedClasses.filter(lambda char: char[0][0] == c).cache()
 
-        levels = aChars.flatMap(lambda char: [((l + 1), 1) for l in range(char[0][1])]).reduceByKey(lambda x, y: x + y).collect()
+        levels = aChars.flatMap(lambda char: [(l + 1, char[1]) for l in range(char[0][1])]).reduceByKey(lambda x, y: x + y).collect()
 
         count = sum([x[1] for x in aChars.collect()])
         ys = [(float(l[1])/float(count)) /
