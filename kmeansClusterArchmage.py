@@ -236,6 +236,6 @@ if __name__ == '__main__':
     clusterMembers = [[] for center in model.centers]
     for row in normedRows:
         clusterIndex=model.predict(row)
-        clusterMembers[clusterIndex].append(columnToArcher(denormalizers[tuple(row)]))
+        clusterMembers[clusterIndex].append(columnToArchmage(denormalizers[tuple(row)]))
     for members in clusterMembers:
         members.sort(key=lambda char: char['Level'])
