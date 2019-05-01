@@ -25,7 +25,7 @@ def filterByClass(rdd):
 def readData(sc, filename):
     rawData = sc.textFile(filename)
     data = rawData.filter(lambda line: len(line) > 1).map(lambda line: json.loads(line)).filter(
-        lambda char: 'character' in char).filter(lambda char: char['character']['campaign'] == "Maj'Eyal")
+        lambda char: 'character' in char).filter(lambda char: char['character']['campaign'] == "Maj'Eyal" and char['character']['permadeath'] != 'Exploration')
     return data
 
 def splitByClass(rdd):
