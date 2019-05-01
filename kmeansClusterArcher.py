@@ -2,7 +2,7 @@ from pyspark import SparkContext
 import json
 import functions
 import numpy as np
-
+import sys
 
 
 from pyspark.mllib.clustering import BisectingKMeans, BisectingKMeansModel
@@ -209,7 +209,9 @@ if __name__ == '__main__':
 
     normalArchers = sc.parallelize(normedRows).persist()
 
-    model = BisectingKMeans.train(normalArchers, 10, maxIterations=10)
+    numClusters= int(sys.argv[1])
+    numIterations= int(sys.argv[2])
+    model = BisectingKMeans.train(normalArchers, numClusters, maxIterations=numIterations)
 
     randomRow=normedRows[0]
     # print("row:", randomRow)
@@ -221,12 +223,16 @@ if __name__ == '__main__':
     #print("\n\n")
 
 
-    goodClusters=sorted(model.centers, key=lambda center: center[0])[:5]
+    goodClusters=sorted(model.centers, key=lambda center: center[0])
     for clusterRow in goodClusters:
             cluster=columnToArcher(clusterRow)
+            print()
+            print()
             print("DEATHS:", cluster['Number of Deaths'])
-            for key, value in sorted(cluster.items(), key=lambda s: abs(s[1]))[-10:]:
-                 print(key, value)
+            printCutoff=float(sys.argv[3])
+            for key, value in sorted(cluster.items(), key=lambda s: abs(s[1])):
+                if abs(value)>printCutoff:
+                    print(key, value)
 
 
 
