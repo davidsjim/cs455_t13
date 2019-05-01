@@ -240,8 +240,5 @@ if __name__ == '__main__':
     for members in clusterMembers:
         members.sort(key=lambda char: char['Level'])
 
-<<<<<<< HEAD
-=======
     for i in range(len(clusterMembers)):
         print("cluster id:",i, ". Cluster size: ", len(clusterMembers[i]), ". Avg. Deaths:", columnToArchmage(model.centers[i])['Number of Deaths'])
->>>>>>> 0c9c3a4458d846fa17671f13122b5cda91ed17a6
