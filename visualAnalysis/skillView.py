@@ -35,7 +35,6 @@ if __name__ == '__main__':
         if re.match('[A-Za-z]', talent[0]):
             print(talent[0], talent[1], float(talent[1])/float(num))
 
-
     plt.plot([x[1] for x in sorted(lists, key=lambda x: x[1], reverse=True)[:30]], 'o')
     plt.xticks([x for x in range(30)],[x[0] for x in sorted(lists, key=lambda x: x[1], reverse=True)[:30]], rotation = 30)
     plt.title("Top 40 "+archatype+" skills")
