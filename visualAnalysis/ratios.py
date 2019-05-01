@@ -36,13 +36,10 @@ if __name__ == '__main__':
 
     for c in archetypes:
         aChars = usedClasses.filter(lambda char: char[0][0] == c).cache()
-
         levels = aChars.flatMap(lambda char: [(l + 1, char[1]) for l in range(char[0][1])]).reduceByKey(lambda x, y: x + y).collect()
-
         count = sum([x[1] for x in aChars.collect()])
         ys = [(float(l[1])/float(count)) /
               (float(sum([x[1] for x in badPractice if x[0] == l[0]])) / float(totalChars)) for l in levels]
-        print(float(levels[0][1]))
         xs = [char[0] for char in levels]
         plt.plot(xs, ys, '--o', label=c)
 
