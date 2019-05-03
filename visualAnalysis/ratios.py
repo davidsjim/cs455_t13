@@ -44,7 +44,11 @@ if __name__ == '__main__':
         plt.plot(xs, ys, '--o', label=c)
 
     plt.xticks([x + 1 for x in range(50)])
-    plt.ylim(bottom=0)
+    plt.title("Relative survival rate by class and level")
+    plt.xlabel("Level")
+    plt.ylabel("Survival rate relative to total")
+    plt.ylim(0, 4.5)
     plt.legend()
+    plt.grid(True, axis='y')
     plt.show()
 
